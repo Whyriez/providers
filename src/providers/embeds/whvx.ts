@@ -9,11 +9,11 @@ const providers = [
   },
   {
     id: 'astra',
-    rank: 710,
+    rank: 700,
   },
   {
     id: 'orion',
-    rank: 700,
+    rank: 710,
   },
 ];
 
@@ -22,12 +22,12 @@ export const headers = {
   Referer: 'https://www.vidbinge.com',
 };
 
-function embed(provider: { id: string; rank: number; disabled?: boolean }) {
+function embed(provider: { id: string; rank: number }) {
   return makeEmbed({
     id: provider.id,
     name: provider.id.charAt(0).toUpperCase() + provider.id.slice(1),
     rank: provider.rank,
-    disabled: provider.disabled,
+    disabled: false,
     async scrape(ctx) {
       let progress = 50;
       const interval = setInterval(() => {
@@ -38,10 +38,19 @@ function embed(provider: { id: string; rank: number; disabled?: boolean }) {
       }, 100);
 
       try {
-        const search = await ctx.fetcher.full(
-          `${baseUrl}/search?query=${encodeURIComponent(ctx.url)}&provider=${provider.id}`,
-          { headers },
-        );
+        // eslint-disable-next-line dot-notation
+        const token = (window as any)['vbtk'] as string;
+
+        // Construct the base URL with the query
+        let searchUrl = `${baseUrl}/search?query=${encodeURIComponent(ctx.url)}&provider=${provider.id}`;
+
+        // Append the token to the URL if it exists
+        if (token) {
+          searchUrl += `&token=${encodeURIComponent(token)}`;
+        }
+
+        // Make the API request
+        const search = await ctx.fetcher.full(searchUrl, { headers });
 
         if (search.statusCode === 429) {
           throw new Error('Rate limited');
